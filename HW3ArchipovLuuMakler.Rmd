@@ -1,0 +1,137 @@
+---
+title: "HW3-ESM 204"
+author: "Kira Archipov, Stephanie Luu, Leah Makler"
+date: "2023-05-17"
+output: 
+  html_document:
+    code_folding: hide
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message= FALSE, warning=FALSE, results=FALSE)
+library(tidyverse)
+library(here)
+library(ggpubr)
+library(janitor)
+library(broom)
+library(knitr)
+library(car)
+library(dplyr)
+library(pracma)
+```
+
+Question 1: 
+```{r}
+ev_data <- read_csv(here("data/HW3_data.csv"))
+
+dac_demand_model <- lm(Price_dollars~Q_DAC, ev_data)
+non_dac_demand_model <-lm(Price_dollars~Q_NonDAC, ev_data)
+
+dac_demand_func <- function(Q){
+  P= 116854.836-6.611(Q)
+}
+nondac_demand_func <- function(Q){
+  P=  158034.280-2.731(Q)
+}
+#ggplot()
+```
+Answer Q's here
+
+Question 2:
+```{r}
+300*63
+
+external_cost<- function(V){
+  C = 18900*V
+}
+
+
+```
+MEC: P=$18,900*Q
+ 
+ Question 3:
+ 
+```{r}
+#agg demand
+dac_demand_func_p <- function(P){
+  Q= 21767.635-(P/6.611)
+}
+nondac_demand_func_p <- function(P){
+  Q=69587.85-(P/2.731)
+}
+
+agg_demand_func_p <- function(P){
+  Q=91355.485-0.5174*P
+  return(Q)
+}
+
+#in terms of q
+agg_demand_func <- function(Q){
+  P=176566.45-(Q/.5174)
+}
+
+q1<-agg_demand_func_p(50000)
+
+slope <- 50000/q1
+
+private_cost <- function(Q){
+  P=0.763528*Q
+}
+
+#ggplot()
+```
+ Answers:
+ 
+ agg demand function:  P=176566.45-(Q/.5174)
+ 
+ supply function (MPC): P = 18900.763528*Q
+ 
+```{r}
+#calculating social cost function
+social_cost <- function(Q){
+  P= external_cost(Q) + private_cost(Q)
+}
+
+social_diff<- function(Q){
+   Z= social_cost(Q)-agg_demand_func(Q)
+   return(Z)
+}
+
+
+q_msc <- fzero(social_diff, c(0,1000))$x
+q_msc
+
+
+private_diff<- function(Q){
+   Z= private_cost(Q)-agg_demand_func(Q)
+   return(Z)
+}
+
+q_mpc <- fzero(private_diff, c(0,1000000))$x
+q_mpc
+
+delta_q <- q_mpc-q_msc # height of triangle
+
+p1 <- social_cost(65485.48)
+p0 <- private_cost(65485.48)
+
+delta_p <- p1-p0
+
+env_cost<- delta_q*delta_p*.5 #triangle = dead weight loss
+
+p1_b<- social_cost(9.34)
+p0_b<- private_cost(9.34)
+
+delta_p_b <- p1_b-p0_b
+
+benefit <- delta_p_b*q_msc
+
+benefit_cp <- benefit/2 #benefit to consumers and producers is the same
+```
+ 
+ benefit to consumers: 824447.7
+ 
+ benefit to producers: 824447.7
+ 
+ environmental cost at status quo: 4.051911e+13
