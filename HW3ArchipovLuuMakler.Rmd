@@ -23,19 +23,43 @@ library(pracma)
 
 Question 1: 
 ```{r}
-ev_data <- read_csv(here("data/HW3_data.csv"))
+ev_data <- read_csv(here("data/HW3_data.csv")) %>% 
+  clean_names()
 
-dac_demand_model <- lm(Price_dollars~Q_DAC, ev_data)
-non_dac_demand_model <-lm(Price_dollars~Q_NonDAC, ev_data)
+ev_longer <- ev_data %>% 
+  pivot_longer(cols = !price_dollars, 
+               names_to = "consumer_type",
+               values_to = "quantity") %>% 
+  group_by(consumer_type)
+
+dac_demand_model <- lm(price_dollars~q_dac, ev_data)
+
+non_dac_demand_model <-lm(price_dollars~q_non_dac, ev_data)
 
 dac_demand_func <- function(Q){
-  P= 116854.836-6.611(Q)
+  P= 116854.836-6.611*Q
 }
 nondac_demand_func <- function(Q){
-  P=  158034.280-2.731(Q)
+  P=  158034.280-2.731*Q
 }
-#ggplot()
+
+ggplot(data = ev_longer, aes(x = quantity, y = price_dollars, color = consumer_type)) + 
+  geom_point() + 
+  ylim(0, 190000) +
+  xlim(0, 90000) +
+  stat_function(fun = function(Q) dac_demand_func(Q)) +
+  stat_function(fun = function(Q) nondac_demand_func(Q)) + 
+  stat_function(fun = function(Q) agg_demand_func(Q)) +
+  theme_minimal() 
+
 ```
+
+```{r}
+equatiomatic::extract_eq(dac_demand_model, use_coefs = TRUE)
+
+equatiomatic::extract_eq(non_dac_demand_model, use_coefs = TRUE)
+```
+
 Answer Q's here
 
 Question 2:
@@ -85,7 +109,7 @@ private_cost <- function(Q){
  
  agg demand function:  P=176566.45-(Q/.5174)
  
- supply function (MPC): P = 18900.763528*Q
+ supply function (MPC): P = .763528*Q
  
 ```{r}
 #calculating social cost function
@@ -135,3 +159,79 @@ benefit_cp <- benefit/2 #benefit to consumers and producers is the same
  benefit to producers: 824447.7
  
  environmental cost at status quo: 4.051911e+13
+ 
+ 
+Question 4: 
+```{r}
+dac_benefit <- integrate(dac_demand_func, 0, q_mpc)$value
+non_dac_benefit <- integrate(nondac_demand_func,0,q_mpc)$value
+
+c <- (non_dac_benefit)-(dac_benefit)
+```
+
+The DAC and nonDAC consumers receive extremely disproportionate benefit from the current EV market. DAC consumers lose \$6,522,840,152, while non-DAC consumers receive \$4,493,211,327. Thus, there is a disparity of \$11,016,051,479 between the two groups. 
+
+Question 5: 
+```{r}
+#a
+q_star <- q_msc
+
+
+optimal_tax <- external_cost(q_star)
+
+#b
+p_star <- agg_demand_func(q_star)
+
+#g
+revenue <- optimal_tax * q_star
+
+#d
+dac_benefit2 <- integrate(dac_demand_func, 0, q_msc)$value
+
+change_dac <- dac_benefit2-dac_benefit
+
+#c
+non_dac_benefit2 <- integrate(nondac_demand_func,0,q_msc)$value
+change_nondac <- non_dac_benefit2-non_dac_benefit
+
+#e 
+quant_diff <- q_mpc-q_msc
+
+supplier_revenue0 <- q_mpc*50000
+
+supplier_revenue1 <- q_msc*p_star
+
+#e
+
+revenue_diff <- supplier_revenue0-supplier_revenue1
+
+#f
+
+env_damage1 <- integrate(external_cost, 0, q_msc)$value
+
+damage_diff <- env_damage0-env_damage1
+
+```
+optimal tax= $176,541.3 <br><br>
+a. Amount of EVs produced/consumed from 65,485 to 9.34 <br><br>
+b. price of EVs from \$50,000 to \$176,548.4 <br><br>
+c. the overall welfare of nonDAC decreases by \$4,491,735,278 from \$4,493,211,327 to \$1,476,049 <br><br>
+d. the overall welfare of DAC consumers increases by \$6,523,931,382 from -\$6,522,840,152 to \$1,091,230 <br><br>
+e. The EV producers are producing 65,476.14 fewer cars, and losing $3,272,624,984.  <br><br>
+f. Environmental damage is reduced by an equivalent of \$40,524,890,838,944 from \$40,524,891,663,463 to \$824,518.998. <br><br>
+g. total tax revenue: $1,649,038
+
+
+
+
+
+
+NOTES FROM OH: 
+- need to add kink 
+q = seq(o, 80000, 100)
+demand_nonDAC = alpha_nd + beta_nd*q
+
+
+
+
+
